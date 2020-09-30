@@ -32,7 +32,7 @@ fail() {
 }
 
 week_name() {
-	printf "Week %02d" "$WEEK"
+	printf "Week-%02d" "$WEEK"
 }
 
 comment() {
