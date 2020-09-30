@@ -1,0 +1,18 @@
+.signal {
+  background-color: gray;
+  display: inline-block;
+  margin: 30px;
+  border-radius: 50px;
+  width: 100px;
+  height: 100px;
+}
+
+#red.light {
+  background-color: red;
+}
+#green.light {
+  background-color: green;
+}
+#yellow.light {
+  background-color: yellow;
+}
