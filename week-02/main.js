@@ -1,4 +1,3 @@
-//import * as fn from "./fn";
 import { TreeSet } from "jstreemap";
 
 const conf = {
@@ -90,8 +89,6 @@ class Map {
       const cell = this.get(current);
       cell.setColor("red");
       path.push(current);
-
-      console.log(cell.fromStart);
 
       if (cell.previous === null) {
         console.log("unexpected previous", cell);
@@ -209,10 +206,7 @@ async function findPath(map, start, end) {
     const better = (function () {
       if (cell.previous === null) return true;
 
-      const champion = map.get(cell.previous);
-      if (candidate.fromStart < champion.fromStart) return true;
-
-      return false;
+      return candidate.fromStart + 1 < cell.fromStart;
     })();
 
     if (!better) {
