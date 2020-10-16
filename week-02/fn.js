@@ -4,6 +4,14 @@ export class Option {
     this.value_ = value;
   }
 
+  static just(value) {
+    return new Option(false, value);
+  }
+
+  static none() {
+    return new Option(true, null);
+  }
+
   is_none() {
     return this.none_;
   }
@@ -22,44 +30,97 @@ export class Option {
 }
 
 export function just(value) {
-  return new Option(false, value);
+  return Option.just(value);
 }
 
 export function none() {
-  return new Option(true, null);
+  return Option.none();
 }
 
+/// Either join two types.
 export class Either {
   constructor(left, value) {
     this.left_ = left;
     this.value_ = value;
   }
 
+  static lhs(value) {
+    return this(true, value);
+  }
+
+  static rhs(value) {
+    return this(false, value);
+  }
+
+  isLhs() {
+    return this.left_;
+  }
+  isRhs() {
+    return !this.left_;
+  }
+
   // apply fn on lhs
   mapl(fn) {
-    return this.left_ ? fn(this.value_) : this.value_;
+    return this.isLhs() ? Either.lhs(fn(this.value_)) : this;
   }
+
   // apply fn on rhs
   mapr(fn) {
-    return this.left_ ? this.value_ : fn(this.value_);
+    return this.isLhs() ? this : Either.rhs(fn(this.value_));
   }
 
   // get lhs or value
   lor(value) {
-    return this.left_ ? this.value_ : value;
+    return this.isLhs() ? this.value_ : value;
   }
+
   // get rhs or value
   ror(value) {
-    return this.left_ ? value : this.value_;
+    return this.isLhs() ? value : this.value_;
   }
 }
 
-export function lhs(value) {
-  return Either(true, value);
-}
+// Result is either value or a error
+class Result extends Either {
+  static ok(value) {
+    return this.lhs(value);
+  }
 
-export function rhs(value) {
-  return Either(false, value);
+  static err(value) {
+    return this.rhs(value);
+  }
+
+  isOk() {
+    return this.isLhs();
+  }
+  isErr() {
+    return this.isRhs();
+  }
+
+  map(fn) {
+    return this.mapl(fn);
+  }
+
+  mapErr(fn) {
+    return this.mapr(fn);
+  }
+
+  // fn(T) -> Result<T, E>
+  then(fn) {
+    return this.isOk() ? fn(this.value_) : this;
+  }
+
+  thenErr(fn) {
+    return this.isOk() ? this : fn(this.value_);
+  }
+
+  or(value) {
+    return this.lor(value);
+  }
+
+  orErr(value) {
+    return this.ror(value);
+  }
 }
 
 export class Iterator {
@@ -83,6 +144,14 @@ export class Iterator {
   map(fn) {
     return new Iterator(() => {
       return this.iterator.next().map(fn);
+    });
+  }
+
+  enumerate() {
+    let count = -1;
+    return this.map((each) => {
+      count += 1;
+      return [count, each];
     });
   }
 
@@ -147,11 +216,10 @@ export class Iterator {
 }
 
 export function range(end) {
-  let current = 0;
+  let current = -1;
   return new Iterator(() => {
     if (current >= end) return none();
-    const result = just(current);
     current += 1;
-    return result;
+    return just(current);
   });
 }
