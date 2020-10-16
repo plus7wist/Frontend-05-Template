@@ -3,11 +3,25 @@
 const conf = {
   mapRows: 100,
   mapCols: 100,
+
+  cellMark: 2,
   cellWall: 1,
-  cellPass: 0,
-  cellSearching: 2,
-  cellWallColor: "black",
+  cellEmpty: 0,
 };
+
+function cellColor(data) {
+  switch (data) {
+    case conf.cellEmpty:
+      return "gray";
+    case conf.cellWall:
+      return "black";
+    case conf.cellMark:
+      return "red";
+    default:
+      console.error("unexpected data", data);
+      return "gray";
+  }
+}
 
 function loadMap(alt) {
   const localMap = localStorage["map"];
@@ -15,58 +29,76 @@ function loadMap(alt) {
   return alt;
 }
 
-function dumpMap(map) {
-  localStorage["map"] = JSON.stringify(map);
-}
-
-function onCellMouseMove(mouse, cell, map) {
+function onCellMouseMove(mouse, cell) {
   if (!mouse.down) return;
 
-  let color, data;
+  let data;
   if (mouse.clear) {
-    color = "";
-    data = conf.cellPass;
+    data = conf.cellEmpty;
   } else {
-    color = conf.cellWallColor;
     data = conf.cellWall;
   }
 
-  cell.element.style.backgroundColor = color;
-  map[cell.index] = data;
+  cell.setData(data);
+}
+
+class Map {
+  constructor(mapList) {
+    const map = loadMap(
+      Array(conf.mapRows * conf.mapCols).fill(conf.cellEmpty)
+    );
+    this.cellList = map.map((data, index) => new Cell(data, index));
+  }
+
+  get([r, c]) {
+    return this.cellList[mapIndex(r, c)];
+  }
+
+  save() {
+    localStorage["map"] = JSON.stringify(
+      this.cellList.map((cell) => {
+        if (cell.data == conf.cellMark) return conf.cellEmpty;
+        return cell.data;
+      })
+    );
+  }
 }
 
 class Cell {
-  constructor(map, row, col) {
+  constructor(data, index) {
     this.element = document.createElement("div");
-    this.index = row * conf.mapCols + col;
+    this.index = index;
+    this.setData(data);
+    this.row = Math.floor(index / conf.mapCols);
+    this.col = index % conf.mapCols;
 
     this.element.classList.add("cell");
-
-    if (map[this.index] == conf.cellWall) {
-      this.renderWall();
-    }
+    this.element.setAttribute("title", `(${this.row}, ${this.col}) - ${index}`);
   }
 
-  renderWall() {
-    this.element.style.backgroundColor = conf.cellWallColor;
+  setData(data) {
+    if (data == this.data) return;
+    this.data = data;
+    this.element.style.backgroundColor = cellColor(data);
   }
 }
 
 function main() {
-  const map = loadMap(Array(conf.mapRows * conf.mapCols).fill(conf.cellPass));
+  const map = new Map();
+
   const container = document.getElementById("container");
   const mouse = { down: false, clean: false };
 
   document
     .getElementById("btn-save")
-    .addEventListener("click", () => dumpMap(map));
+    .addEventListener("click", () => map.save());
 
   for (let row = 0; row < conf.mapRows; row++) {
     for (let col = 0; col < conf.mapCols; col++) {
-      const cell = new Cell(map, row, col);
+      const cell = map.get([row, col]);
 
       cell.element.addEventListener("mousemove", () =>
-        onCellMouseMove(mouse, cell, map)
+        onCellMouseMove(mouse, cell)
       );
       container.appendChild(cell.element);
     }
@@ -83,6 +115,9 @@ function main() {
   });
 
   container.addEventListener("contextmenu", (event) => event.preventDefault());
+
+  // text area
+  findPath(map, [0, 0], [10, 10]);
 }
 
 function mapIndex(r, c) {
@@ -90,44 +125,45 @@ function mapIndex(r, c) {
 }
 
 function findPath(map, start, end) {
+  console.log(start, end);
   const queue = [start];
 
-  function enqueue(r, c) {
-    if (r < 0 || r >= conf.mapRows)
-      return;
-    if (c < 0 || c >= conf.mapCols)
-      return;
+  const cell = map.get(start);
+  if (cell.data != conf.cellEmpty) return false;
+  cell.setData(conf.cellMark);
 
-    const index = mapIndex(r, c);
-    const data = map[index];
+  function enqueue([r, c]) {
+    if (r < 0 || r >= conf.mapRows) return;
+    if (c < 0 || c >= conf.mapCols) return;
 
-    if (data != conf.cellPass)
-      return;
+    const cell = map.get([r, c]);
 
-    map[index] = conf.cellSearching;
+    if (cell.data != conf.cellEmpty) return;
+    cell.setData(conf.cellMark);
+
     queue.push([r, c]);
   }
 
-  function dequeue() {
-    const rc = queue.shift();
-    const index = mapIndex(r, c);
-    map[index] = conf.cellPass;
-    return rc;
-  }
+  console.log(queue);
+  while (queue.length > 0) {
+    const [r, c] = queue.shift();
 
-  while (queue.length) {
-    const [r, c] = dequeue();
-
-    if (r == end[0] && c == end[1]) {
-      return true;
-    }
-
-    for (const dr = -1; dr <= 1; dr += 2) {
-      for (const dc = -1; dc <= 1; dr += c) {
-        queue(r + dr, c + dc);
+    for (const [dr, dc] of [
+      [0, 1],
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+    ]) {
+      const next = [r + dr, c + dc];
+      if (next[0] == end[0] && next[1] == end[1]) {
+        map.get(next).setData(conf.cellMark);
+        console.log("found", end);
+        return true;
       }
+      enqueue(next);
     }
   }
+  return false;
 }
 
 main();
