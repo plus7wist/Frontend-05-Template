@@ -82,7 +82,7 @@ comment_body() {
 
 comment_issue() {
 	local curl_u="$GITHUB_NAME:$GITHUB_TOKEN"
-	local curl_url="https://api.github.com/repos/$UPSTREAM_NAME/$GITHUB_REPO/issues/$WEEK_NO/comments"
+	local curl_url="https://api.github.com/repos/$UPSTREAM_NAME/$GITHUB_REPO/issues/$ISSUE_NO/comments"
 	local curl_body="$(comment_body)"
 
 	if is_debug; then
