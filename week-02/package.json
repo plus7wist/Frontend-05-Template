@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
-  "dependencies": {},
+  "dependencies": {
+    "jstreemap": "^1.28.2"
+  },
   "devDependencies": {
     "prettier": "^2.1.2",
     "webpack": "^5.1.0",

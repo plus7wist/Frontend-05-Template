@@ -1,13 +1,17 @@
 //import * as fn from "./fn";
+import { TreeSet } from "jstreemap";
 
 const conf = {
   mapRows: 100,
   mapCols: 100,
 
-  cellMark: 2,
   cellWall: 1,
   cellEmpty: 0,
 };
+
+function sleep(time) {
+  return new Promise((resolve, reject) => setTimeout(resolve, time));
+}
 
 function cellColor(data) {
   switch (data) {
@@ -15,11 +19,35 @@ function cellColor(data) {
       return "gray";
     case conf.cellWall:
       return "black";
-    case conf.cellMark:
-      return "red";
     default:
       console.error("unexpected data", data);
       return "gray";
+  }
+}
+
+class TreeQueue {
+  constructor(initial, compare) {
+    this.treeSet = new TreeSet();
+    this.treeSet.compareFunc = compare;
+
+    for (const each of initial) {
+      this.treeSet.add(each);
+    }
+    this.compare = compare;
+  }
+
+  enqueue(data) {
+    this.treeSet.add(data);
+  }
+
+  dequeue() {
+    const it = this.treeSet.begin();
+    this.treeSet.erase(it);
+    return it.key;
+  }
+
+  get length() {
+    return this.treeSet.size;
   }
 }
 
@@ -54,12 +82,30 @@ class Map {
     return this.cellList[mapIndex(r, c)];
   }
 
+  async recoverPath(start, end) {
+    const path = [];
+    let current = end;
+
+    while (!samePoint(current, start)) {
+      const cell = this.get(current);
+      cell.setColor("red");
+      path.push(current);
+
+      console.log(cell.fromStart);
+
+      if (cell.previous === null) {
+        console.log("unexpected previous", cell);
+        return null;
+      }
+      await sleep(30);
+      current = cell.previous;
+    }
+    return path;
+  }
+
   save() {
     localStorage["map"] = JSON.stringify(
-      this.cellList.map((cell) => {
-        if (cell.data == conf.cellMark) return conf.cellEmpty;
-        return cell.data;
-      })
+      this.cellList.map((cell) => cell.data)
     );
   }
 }
@@ -69,17 +115,24 @@ class Cell {
     this.element = document.createElement("div");
     this.index = index;
     this.setData(data);
-    this.row = Math.floor(index / conf.mapCols);
-    this.col = index % conf.mapCols;
+    this.previous = null;
+    this.fromStart = null;
 
     this.element.classList.add("cell");
-    this.element.setAttribute("title", `(${this.row}, ${this.col}) - ${index}`);
+
+    const row = Math.floor(index / conf.mapCols);
+    const col = index % conf.mapCols;
+    this.element.setAttribute("title", `(${row}, ${col}) - ${index}`);
   }
 
   setData(data) {
     if (data == this.data) return;
     this.data = data;
     this.element.style.backgroundColor = cellColor(data);
+  }
+
+  setColor(color) {
+    this.element.style.backgroundColor = color;
   }
 }
 
@@ -116,7 +169,7 @@ function main() {
 
   container.addEventListener("contextmenu", (event) => event.preventDefault());
 
-  // text area
+  // test area
   findPath(map, [0, 0], [10, 10]);
 }
 
@@ -124,46 +177,80 @@ function mapIndex(r, c) {
   return r * conf.mapCols + c;
 }
 
-function findPath(map, start, end) {
-  console.log(start, end);
-  const queue = [start];
+function samePoint(lhs, rhs) {
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
+}
+
+async function findPath(map, start, end) {
+  function distance(point) {
+    return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
+  }
+
+  const queue = new TreeQueue(
+    [start],
+    (lhs, rhs) => distance(lhs) - distance(rhs)
+  );
 
   const cell = map.get(start);
   if (cell.data != conf.cellEmpty) return false;
-  cell.setData(conf.cellMark);
 
-  function enqueue([r, c]) {
+  cell.setColor("lightgreen");
+  cell.fromStart = 0;
+
+  async function enqueue([r, c], previous) {
     if (r < 0 || r >= conf.mapRows) return;
     if (c < 0 || c >= conf.mapCols) return;
 
     const cell = map.get([r, c]);
-
     if (cell.data != conf.cellEmpty) return;
-    cell.setData(conf.cellMark);
 
-    queue.push([r, c]);
+    const candidate = map.get(previous);
+
+    const better = (function () {
+      if (cell.previous === null) return true;
+
+      const champion = map.get(cell.previous);
+      if (candidate.fromStart < champion.fromStart) return true;
+
+      return false;
+    })();
+
+    if (!better) {
+      return;
+    }
+
+    cell.previous = previous;
+    cell.fromStart = candidate.fromStart + 1;
+    cell.setColor("lightgreen");
+    queue.enqueue([r, c]);
   }
 
-  console.log(queue);
   while (queue.length > 0) {
-    const [r, c] = queue.shift();
+    const [r, c] = queue.dequeue();
 
-    for (const [dr, dc] of [
+    const deltas = [
       [0, 1],
       [0, -1],
       [-1, 0],
       [1, 0],
-    ]) {
+    ];
+    for (const [dr, dc] of deltas) {
+      if (dr == 0 && dc == 0) continue;
+
       const next = [r + dr, c + dc];
-      if (next[0] == end[0] && next[1] == end[1]) {
-        map.get(next).setData(conf.cellMark);
-        console.log("found", end);
-        return true;
+      if (samePoint(next, end)) {
+        const cell = map.get(next);
+
+        cell.setColor("lightgreen");
+        cell.previous = [r, c];
+
+        return await map.recoverPath(start, end);
       }
-      enqueue(next);
+
+      await enqueue(next, [r, c]);
     }
   }
-  return false;
+  return null;
 }
 
 main();
