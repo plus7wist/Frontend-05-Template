@@ -1,235 +1,77 @@
-const inspectStep = "  ";
+import { parseString } from "./ll.js";
+import { Multiplicative } from "./token_mul.js";
+import { Additive } from "./token_add.js";
+import { tokenTypeList } from "./basic_tokens.js";
 
-class Token {
-  constructor() {}
-
-  describe() {
-    return this;
-  }
-
-  inspect(prefix) {
-    console.log(prefix, this);
-  }
-
-  inspectTop() {
-    this.inspect("|");
-  }
+function makeLiNodeContainsAst(ast) {
+  const li = document.createElement("li");
+  li.appendChild(makeAstNode(ast));
+  return li;
 }
 
-class TokenError extends Token {}
-
-class TokenNumber extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
-  }
+function makeDivNodeContainsString(string) {
+  const div = document.createElement("div");
+  div.innerText = string;
+  return div;
 }
 
-class TokenWhitespace extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
+// return node:
+//   <name>
+//   - <wrapped>
+// or:
+//   <name>
+//   - <lhs>
+//   - <operator>
+//   - <rhs>
+function makeAstNodeOfOperator(ast, name) {
+  const div = document.createElement("div");
+  div.appendChild(makeDivNodeContainsString(name));
+
+  const ul = document.createElement("ul");
+  div.appendChild(ul);
+
+  if (ast.operator === null) {
+    ul.appendChild(makeLiNodeContainsAst(ast.children[0]));
+  } else {
+    ul.appendChild(makeLiNodeContainsAst(ast.children[0]));
+    ul.appendChild(makeLiNodeContainsAst(ast.operator));
+    ul.appendChild(makeLiNodeContainsAst(ast.children[1]));
   }
+
+  return div;
 }
 
-class TokenLineTerminator extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
+function makeAstNode(ast) {
+  if (ast instanceof Multiplicative) {
+    return makeAstNodeOfOperator(ast, Multiplicative.name);
   }
-}
 
-class TokenOperatorAdd extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
+  if (ast instanceof Additive) {
+    return makeAstNodeOfOperator(ast, Additive.name);
   }
-}
 
-class TokenOperatorSub extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
-  }
-}
-
-class TokenOperatorMul extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
-  }
-}
-
-class TokenOperatorDiv extends Token {
-  constructor(value) {
-    super();
-    this.value = value;
-  }
-}
-
-class TokenEof extends Token {
-  constructor() {
-    super();
-  }
-}
-
-const tokenRegex = /([0-9.]+)|([\t ]+)|([\r\n]+)|(\+)|(\-)|(\*)|(\/)/g;
-
-const tokenTypeList = [
-  TokenNumber,
-  TokenWhitespace,
-  TokenLineTerminator,
-  TokenOperatorAdd,
-  TokenOperatorSub,
-  TokenOperatorMul,
-  TokenOperatorDiv,
-];
-
-function* tokenizer(source) {
-  while (true) {
-    const lastIndex = tokenRegex.lastIndex;
-    const result = tokenRegex.exec(source);
-
-    if (!result) break;
-
-    if (tokenRegex.lastIndex - lastIndex > result[0].length) {
-      yield new TokenError();
-      break;
-    }
-
-    for (let i = 0; i < tokenTypeList.length; i++) {
-      const capture = result[i + 1];
-      if (capture) yield new tokenTypeList[i](capture);
+  for (const BasicTokenType of tokenTypeList) {
+    if (ast instanceof BasicTokenType) {
+      const div = document.createElement("div");
+      return makeDivNodeContainsString(
+        BasicTokenType.name + ": " + ast.value.toString()
+      );
     }
   }
-  yield new TokenEof();
+
+  console.log(ast);
+
+  return null;
 }
-
-class TokenMultiplicative extends Token {
-  constructor(operator, children) {
-    super();
-    this.operator = operator;
-    this.children = children;
-  }
-
-  static fromNumber(number) {
-    return new TokenMultiplicative(null, [number]);
-  }
-
-  static fromOperator(lhs, operator, rhs) {
-    return new TokenMultiplicative(operator, [lhs, rhs]);
-  }
-
-  describe() {
-    if (this.operator === null) {
-      return this.children[0].describe();
-    }
-    return this;
-  }
-
-  inspect(prefix) {
-    console.log(prefix, "TokenMultiplicative");
-    if (this.operator === null) {
-      this.children[0].inspect(prefix + inspectStep);
-    } else {
-      this.operator.inspect(prefix + inspectStep);
-
-      const step2 = inspectStep + inspectStep;
-      this.children[0].inspect(prefix + step2);
-      this.children[1].inspect(prefix + step2);
-    }
-  }
-}
-
-class Cons {
-  constructor(car, cdr) {
-    this.car = car;
-    this.cdr = cdr;
-  }
-}
-
-function cons(car, cdr) {
-  return new Cons(car, cdr);
-}
-
-// return [ast, restSource]
-function parseMultiplicativeExperssion(source) {
-  if (source === null) return [null, source];
-
-  const first = source.car;
-  if (first instanceof TokenNumber) {
-    const multi = TokenMultiplicative.fromNumber(first);
-    return parseMultiplicativeExperssion(cons(multi, source.cdr));
-  }
-
-  const lhs = source.car;
-  const operator = source.cdr?.car;
-
-  if (first instanceof TokenMultiplicative) {
-    const merge = () => {
-      if (operator instanceof TokenOperatorMul) return true;
-      if (operator instanceof TokenOperatorDiv) return true;
-      return false;
-    };
-
-    if (merge()) {
-      const [rhs, rest] = parseMultiplicativeExperssion(source.cdr.cdr);
-      const mul = TokenMultiplicative.fromOperator(lhs, operator, rhs);
-      return parseMultiplicativeExperssion(cons(mul, rest));
-    }
-
-    return [first, source.cdr];
-  }
-
-  return [new TokenError(), source];
-}
-
-function iteratorToList(iterator) {
-  let { value, done } = iterator.next();
-  if (done) return null;
-  return cons(value, iteratorToList(iterator));
-}
-
-function arrayToListRange(array, begin, end) {
-  if (end - begin == 0) return null;
-  return cons(array[begin], arrayToListRange(array, begin + 1, end));
-}
-
-function arrayToList(array) {
-  return arrayToListRange(array, 0, array.length);
-}
-
-function listMap(list, fn) {
-  if (list === null) return null;
-  return cons(fn(list.car), listMap(list.cdr, fn));
-}
-
-function listInspect(list, fn) {
-  if (list === null) return null;
-  fn(list.car);
-  listInspect(list.cdr, fn);
-}
-
-function listFilter(list, fn) {
-  if (list === null) return null;
-  if (fn(list.car)) return cons(list.car, listFilter(list.cdr, fn));
-  return listFilter(list.cdr, fn);
-}
-
 function main() {
-  const tokens = iteratorToList(tokenizer("10 / 23 * 3"));
+  const container = document.getElementById("container");
 
-  const meanfulTokens = listFilter(
-    tokens,
-    (token) => !(token instanceof TokenWhitespace)
-  );
+  const string = "12 / 8 * 23 + 9 * 7";
+  const [ast, rest] = parseString(string);
 
-  const [ast, restSource] = parseMultiplicativeExperssion(meanfulTokens);
-
-  ast.inspectTop();
-
-  console.log("Rest:");
-  listInspect(restSource, (token) => token.inspectTop());
+  container.appendChild(makeDivNodeContainsString(string));
+  container.appendChild(document.createElement("hr"));
+  container.appendChild(makeAstNode(ast));
 }
 
 main();
