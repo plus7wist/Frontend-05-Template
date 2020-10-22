@@ -3,7 +3,7 @@ import * as token from "./basic_tokens.js";
 import { Multiplicative, parse as parseMultiplicative } from "./token_mul.js";
 import { parseOperatorMerge } from "./token_operator.js";
 
-export class Additive extends token.Token {
+export class Additive extends token.metaClassWithoutValue('Additive') {
   constructor(operator, children) {
     super();
     this.operator = operator;
@@ -45,5 +45,5 @@ export function parse(source) {
     );
   }
 
-  return [new token.Error(), source];
+  return [new token.Error(first), source];
 }

@@ -2,11 +2,12 @@ import { cons } from "./cons.js";
 import * as token from "./basic_tokens.js";
 import { parseOperatorMerge } from "./token_operator.js";
 
-export class Multiplicative extends token.Token {
+export class Multiplicative extends token.metaClassWithoutValue('Multiplicative') {
   constructor(operator, children) {
     super();
     this.operator = operator;
     this.children = children;
+    this.name = 'Multiplicative'
   }
 
   static wrap(number) {

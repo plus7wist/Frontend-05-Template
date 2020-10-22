@@ -1,17 +1,16 @@
-import { iteratorToList, listFilter, listInspect } from "./cons.js";
-import { Whitespace } from "./basic_tokens.js";
-import { tokenizer } from "./tokenize.js";
-
-//import { Multiplicative } from "./token_mul.js";
-
-import { parse as parseAdditive } from "./token_add.js";
+import { iteratorToList, listFilter, listInspect } from "./cons";
+import { Whitespace } from "./basic_tokens";
+import { tokenizer } from "./tokenize";
+import { parse as parseAdditive } from "./token_add";
 
 export function parseString(string) {
   const tokens = iteratorToList(tokenizer(string));
+
   const meanfulTokens = listFilter(
     tokens,
     (token) => !(token instanceof Whitespace)
   );
 
+  // listInspect(meanfulTokens, console.log);
   return parseAdditive(meanfulTokens);
 }

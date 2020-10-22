@@ -1,79 +1,60 @@
-import { parseString } from "./ll.js";
-import { Multiplicative } from "./token_mul.js";
-import { Additive } from "./token_add.js";
-import { tokenTypeList } from "./basic_tokens.js";
-import { noReactCreateElement, render } from "./noreact.js";
+import { parseString } from "./ll";
+import { Multiplicative } from "./token_mul";
+import { Additive } from "./token_add";
+import { tokenTypeList } from "./basic_tokens";
+import { noReactCreateElement, render } from "./noreact";
 
-function makeLiNodeContainsAst(ast) {
-  const li = document.createElement("li");
-  li.appendChild(makeAstNode(ast));
-  return li;
-}
-
-function makeDivNodeContainsString(string) {
-  const div = document.createElement("div");
-  div.innerText = string;
-  return div;
-}
-
-// return node:
-//   <name>
-//   - <wrapped>
-// or:
-//   <name>
-//   - <lhs>
-//   - <operator>
-//   - <rhs>
 function makeAstNodeOfOperator(ast, name) {
-  const div = document.createElement("div");
-  div.appendChild(makeDivNodeContainsString(name));
-
-  const ul = document.createElement("ul");
-  div.appendChild(ul);
+  let children = [];
 
   if (ast.operator === null) {
-    ul.appendChild(makeLiNodeContainsAst(ast.children[0]));
+    children = [makeAstNode(ast.children[0])];
   } else {
-    ul.appendChild(makeLiNodeContainsAst(ast.children[0]));
-    ul.appendChild(makeLiNodeContainsAst(ast.operator));
-    ul.appendChild(makeLiNodeContainsAst(ast.children[1]));
+    children = [ast.children[0], ast.operator, ast.children[1]].map(
+      makeAstNode
+    );
   }
+  children = children.map((child) => <li>{child}</li>);
 
-  return div;
+  return (
+    <div>
+      {name}
+      <ul> {children} </ul>
+    </div>
+  );
 }
 
 function makeAstNode(ast) {
-  if (ast instanceof Multiplicative) {
+  if (ast.isInstanceOf(Multiplicative)) {
     return makeAstNodeOfOperator(ast, Multiplicative.name);
   }
 
-  if (ast instanceof Additive) {
+  if (ast.isInstanceOf(Additive)) {
     return makeAstNodeOfOperator(ast, Additive.name);
   }
 
   for (const BasicTokenType of tokenTypeList) {
-    if (ast instanceof BasicTokenType) {
-      const div = document.createElement("div");
-      return makeDivNodeContainsString(
-        BasicTokenType.name + ": " + ast.value.toString()
-      );
+    if (ast.isInstanceOf(BasicTokenType)) {
+      return ast.name + ": " + ast.value;
     }
   }
 
-  console.log(ast);
-
-  return null;
+  console.error('unexpected token', ast);
+  return "ParseError";
 }
 
 function main() {
-  const container = document.getElementById("container");
-
   const string = "12 / 8 * 23 + 9 * 7";
   const [ast, rest] = parseString(string);
 
-  container.appendChild(makeDivNodeContainsString(string));
-  container.appendChild(document.createElement("hr"));
-  container.appendChild(makeAstNode(ast));
+  render(
+    <div>
+      <p>{string}</p>
+      <hr />
+      {makeAstNode(ast)}
+    </div>,
+    document.getElementById("container")
+  );
 }
 
 main();
