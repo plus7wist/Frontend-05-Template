@@ -8,7 +8,7 @@ export function parseString(string) {
 
   const meanfulTokens = listFilter(
     tokens,
-    (token) => !(token instanceof Whitespace)
+    (token) => !token.isInstanceOf(Whitespace)
   );
 
   // listInspect(meanfulTokens, console.log);

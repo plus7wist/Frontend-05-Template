@@ -1,46 +1,50 @@
-export class Token {
-  constructor() {
-    this.name = 'Token';
-  }
+class Token {
+  constructor() {}
 }
 
-export function metaClass(name) {
-  return class extends Token {
+export function tokenClassWithValue(name) {
+  return class extends tokenClass(name) {
     constructor(value) {
       super();
       this.value = value;
-      this.name = name;
     }
 
-    static name() { return name; }
+    toString() {
+      return name + ": " + this.value;
+    }
   };
 }
 
-export function metaClassWithoutValue(name) {
+export function tokenClass(name) {
   return class extends Token {
-    constructor(value) {
+    constructor() {
       super();
-      this.value = value;
-      this.name = name;
+      this.tokenName = name;
     }
 
-    static get name() { return name; }
+    static get tokenName() {
+      return name;
+    }
 
     isInstanceOf(type) {
-      return name === type.name;
+      return name === type.tokenName;
+    }
+
+    toString() {
+      return name;
     }
   };
 }
 
-export const Error = metaClass('Error');
-export const Number = metaClass('Number');
-export const Whitespace = metaClass('Whitespace');
-export const LineTerminator = metaClass('LineTerminator');
-export const OperatorAdd = metaClass('OperatorAdd');
-export const OperatorSub = metaClass('OperatorSub');
-export const OperatorDiv = metaClass('OperatorDiv');
-export const OperatorMul = metaClass('OperatorMul');
-export const Eof = metaClassWithoutValue('Eof');
+export const Error = tokenClassWithValue("Error");
+export const Number = tokenClassWithValue("Number");
+export const Whitespace = tokenClassWithValue("Whitespace");
+export const LineTerminator = tokenClassWithValue("LineTerminator");
+export const OperatorAdd = tokenClassWithValue("OperatorAdd");
+export const OperatorSub = tokenClassWithValue("OperatorSub");
+export const OperatorDiv = tokenClassWithValue("OperatorDiv");
+export const OperatorMul = tokenClassWithValue("OperatorMul");
+export const Eof = tokenClass("Eof");
 
 export const tokenRegex = /([0-9.]+)|([\t ]+)|([\r\n]+)|(\+)|(\-)|(\*)|(\/)/g;
 

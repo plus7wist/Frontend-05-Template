@@ -12,7 +12,7 @@ export function tokenizer(source) {
     if (!result) return iteratorEnding;
 
     if (token.tokenRegex.lastIndex - lastIndex > result[0].length) {
-      return new token.Error();
+      return new token.Error(result);
     }
 
     for (let i = 0; i < token.tokenTypeList.length; i++) {
@@ -28,15 +28,11 @@ export function tokenizer(source) {
 
   const iteratorNext = () => {
     const value = next();
-    if (value instanceof IteratorEnding) {
+    if (value === iteratorEnding) {
       return { done: true };
     }
     return { done: false, value: value };
   };
 
   return { next: iteratorNext };
-}
-
-function iteratorEnd() {
-  return { done: true };
 }

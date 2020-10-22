@@ -8,7 +8,7 @@ export function parseOperatorMerge(
   parse,
   fromOperator
 ) {
-  if (!source) return [new token.Error(), source];
+  if (!source) return [new token.Error("empty source"), source];
   const operator = source.car;
 
   if (isOperator(operator)) {
