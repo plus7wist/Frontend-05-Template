@@ -2,6 +2,7 @@ import { parseString } from "./ll.js";
 import { Multiplicative } from "./token_mul.js";
 import { Additive } from "./token_add.js";
 import { tokenTypeList } from "./basic_tokens.js";
+import { noReactCreateElement, render } from "./noreact.js";
 
 function makeLiNodeContainsAst(ast) {
   const li = document.createElement("li");
@@ -63,6 +64,7 @@ function makeAstNode(ast) {
 
   return null;
 }
+
 function main() {
   const container = document.getElementById("container");
 
