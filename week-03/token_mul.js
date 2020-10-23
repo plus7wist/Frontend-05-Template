@@ -1,6 +1,5 @@
-import { cons } from "./cons.js";
-import * as token from "./basic_tokens.js";
-import { parseOperatorMerge } from "./token_operator.js";
+import { cons } from "./cons";
+import * as token from "./basic_tokens";
 
 export class Multiplicative extends token.tokenClass("Multiplicative") {
   constructor(operator, children) {
@@ -27,18 +26,18 @@ export function parse(source) {
   if (source.cdr === null) return [source.car, null];
 
   const first = source.car;
-  if (first.isInstanceOf(token.Number)) {
+  if (first.typeIs(token.Number)) {
     const mul = Multiplicative.wrap(first);
     return parse(cons(mul, source.cdr));
   }
 
-  if (first.isInstanceOf(Multiplicative)) {
+  if (first.typeIs(Multiplicative)) {
     const lhs = first;
     const operator = source.cdr.car;
 
     if (
-      !operator.isInstanceOf(token.OperatorMul) &&
-      !operator.isInstanceOf(token.OperatorDiv)
+      !operator.typeIs(token.OperatorMul) &&
+      !operator.typeIs(token.OperatorDiv)
     ) {
       return [lhs, source.cdr];
     }

@@ -26,7 +26,7 @@ export function tokenClass(name) {
       return name;
     }
 
-    isInstanceOf(type) {
+    typeIs(type) {
       return name === type.tokenName;
     }
 

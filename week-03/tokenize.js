@@ -1,5 +1,5 @@
-import { cons, iteratorToList, listFilter, listInspect } from "./cons.js";
-import * as token from "./basic_tokens.js";
+import { cons, iteratorToList, listFilter, listInspect } from "./cons";
+import * as token from "./basic_tokens";
 
 class IteratorEnding {}
 const iteratorEnding = new IteratorEnding();

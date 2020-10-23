@@ -1,7 +1,4 @@
-const babelPlugins = [
-  babelJsx(),
-  // babelRuntime(),
-];
+const babelPlugins = [babelJsx()];
 
 module.exports = {
   mode: "development",
@@ -11,25 +8,27 @@ module.exports = {
   optimization: {
     minimize: false,
   },
+  resolve: {
+    extensions: [".mjs", ".js"],
+  },
   module: {
     rules: [babelRule()],
   },
 };
 
 function babelRule() {
-  const test = /\.js$/;
-
   const options = {
     presets: ["@babel/preset-env"],
     plugins: babelPlugins,
   };
 
   return {
-    test: test,
+    test: /\.m?js$/,
     use: {
       loader: "babel-loader",
       options: options,
     },
+    exclude: /node_modules/,
   };
 }
 

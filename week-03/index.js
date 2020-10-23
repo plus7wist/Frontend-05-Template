@@ -20,21 +20,21 @@ function makeAstNodeOfOperator(ast, name) {
 }
 
 function makeAstNode(ast) {
-  if (ast.isInstanceOf(Multiplicative)) {
+  if (ast.typeIs(Multiplicative)) {
     return makeAstNodeOfOperator(ast, Multiplicative.name);
   }
 
-  if (ast.isInstanceOf(Additive)) {
+  if (ast.typeIs(Additive)) {
     return makeAstNodeOfOperator(ast, Additive.name);
   }
 
   for (const BasicTokenType of tokenTypeList) {
-    if (ast.isInstanceOf(BasicTokenType)) {
+    if (ast.typeIs(BasicTokenType)) {
       return ast.tokenName + ": " + ast.value;
     }
   }
 
-  if (ast.isInstanceOf(TokenError)) {
+  if (ast.typeIs(TokenError)) {
     return ast.tokenName + ": " + ast.value;
   }
 

@@ -1,7 +1,6 @@
-import { cons } from "./cons.js";
-import * as token from "./basic_tokens.js";
-import { Multiplicative, parse as parseMultiplicative } from "./token_mul.js";
-import { parseOperatorMerge } from "./token_operator.js";
+import { cons } from "./cons";
+import * as token from "./basic_tokens";
+import { Multiplicative, parse as parseMultiplicative } from "./token_mul";
 
 export class Additive extends token.tokenClass("Additive") {
   constructor(operator, children) {
@@ -19,6 +18,12 @@ export class Additive extends token.tokenClass("Additive") {
   }
 }
 
+function isAdditiveOperator(operator) {
+  return (
+    operator.typeIs(token.OperatorAdd) || operator.typeIs(token.OperatorSub)
+  );
+}
+
 // Additive =
 //   Multiplicative |
 //   Additive + Multiplicative |
@@ -28,19 +33,16 @@ export function parse(source) {
   if (source.cdr === null) return [source.car, null];
 
   const [mul, rest] = parseMultiplicative(source);
-  if (mul.isInstanceOf(Multiplicative)) {
+  if (mul.typeIs(Multiplicative)) {
     const add = Additive.wrap(mul);
     return parse(cons(add, rest));
   }
 
   const lhs = source.car;
-  if (lhs.isInstanceOf(Additive)) {
+  if (lhs.typeIs(Additive)) {
     const operator = source.cdr.car;
 
-    if (
-      !operator.isInstanceOf(token.OperatorAdd) &&
-      !operator.isInstanceOf(token.OperatorSub)
-    ) {
+    if (!isAdditiveOperator(operator)) {
       return [lhs, source];
     }
 
