@@ -1,5 +1,5 @@
-import { strict as assert } from "assert";
-import { env } from "process";
+const assert = require("assert").strict;
+const { env } = require("process");
 
 // KMP table that allow ? match each point.
 function kmpTable(pattern, begin, length) {
@@ -88,9 +88,11 @@ function wildcardMatchWithoutStar(source, sBegin, pattern, pBegin, length) {
 }
 
 function wildcardMatch(source, pattern) {
+  // console.log("match", source, pattern);
+
   const stars = [];
   for (let i = 0; i < pattern.length; i++) {
-    if (pattern[i] == "?") {
+    if (pattern[i] == "*") {
       stars.push(i);
     }
   }
@@ -105,13 +107,13 @@ function wildcardMatch(source, pattern) {
     stars[0] != 0 &&
     !wildcardMatchWithoutStar(source, 0, pattern, 0, stars[0])
   ) {
-    console.log('beginning failed');
+    // console.log("beginning failed");
     return false;
   } else {
     sourceBegin = stars[0];
   }
 
-  for (let i = 1; i < stars.length - 1; i++) {
+  for (let i = 1; i < stars.length; i++) {
     const patternBegin = stars[i - 1] + 1;
     const patternLength = stars[i] - stars[i - 1] - 1;
     if (patternLength == 0) {
@@ -125,8 +127,9 @@ function wildcardMatch(source, pattern) {
       patternBegin,
       patternLength
     );
+    // console.log({ sourceBegin, matchPoint });
     if (matchPoint == -1) {
-      console.log('middle failed');
+      // console.log("middle failed");
       return false;
     }
     sourceBegin = matchPoint + patternLength;
@@ -141,7 +144,8 @@ function wildcardMatch(source, pattern) {
     const length = pattern.length - lastStar - 1;
     const sourceBegin = source.length - length;
     const patternBegin = pattern.length - length;
-    console.log('final match');
+    // console.log("final match", { length, sourceBegin, patternBegin });
+
     return wildcardMatchWithoutStar(
       source,
       sourceBegin,
@@ -153,7 +157,25 @@ function wildcardMatch(source, pattern) {
 }
 
 function testWildcardMatch() {
-  assert.deepEqual(wildcardMatch('abc', '*'), true);
+  assert.deepEqual(wildcardMatch("abc", "*"), true);
+  assert.deepEqual(wildcardMatch("abcd", "a*d"), true);
+  assert.deepEqual(wildcardMatch("abcd", "*d"), true);
+  assert.deepEqual(wildcardMatch("abcd", "a*"), true);
+
+  assert.deepEqual(wildcardMatch("abcd1234", "a*"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "a*1*"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "*c*4"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "*c*1*"), true);
+
+  assert.deepEqual(wildcardMatch("abcd1234", "a*"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "a*?*"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "*?*4"), true);
+  assert.deepEqual(wildcardMatch("abcd1234", "*?*1*"), true);
+
+  assert.deepEqual(wildcardMatch("abcd1234", "*c*b*"), false);
+  assert.deepEqual(wildcardMatch("abcd1234", "*c*1*x"), false);
+  assert.deepEqual(wildcardMatch("abcd1234", "c*1"), false);
+  assert.deepEqual(wildcardMatch("abcd1234", "*c*d"), false);
 }
 
 testWildcardMatch();
