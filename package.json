@@ -1,0 +1,24 @@
+{
+  "name": "winter-frontend-class",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitee.com:plus7wist/winter-frontend-class.git"
+  },
+  "keywords": [],
+  "author": "plus7wist",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "commander": "^6.2.0",
+    "utf-8": "^2.0.0",
+    "utf8": "^3.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.1.2"
+  }
+}
