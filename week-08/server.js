@@ -10,7 +10,7 @@ function service(request, response) {
 
   request
     .on("error", console.error)
-    .on("data", (chunk) => chunks.push(chunk.toString()))
+    .on("data", (chunk) => chunks.push(chunk))
     .on("end", () => {
       const body = Buffer.concat(chunks).toString();
       console.log("request body:", body);
